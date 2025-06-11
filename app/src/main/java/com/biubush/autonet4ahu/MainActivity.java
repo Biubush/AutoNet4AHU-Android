@@ -238,15 +238,17 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 
-                // 发送通知
-                String webhook = webhookInput.getText().toString().trim();
-                List<String> webhookUrls = new ArrayList<>();
-                if (!TextUtils.isEmpty(webhook)) {
-                    webhookUrls.add(webhook);
+                // 只在登录成功时发送通知
+                if (result.isSuccess()) {
+                    String webhook = webhookInput.getText().toString().trim();
+                    List<String> webhookUrls = new ArrayList<>();
+                    if (!TextUtils.isEmpty(webhook)) {
+                        webhookUrls.add(webhook);
+                    }
+                    
+                    Notifier notifier = new Notifier(MainActivity.this, webhookUrls, notifyOnSuccessSwitch.isChecked());
+                    notifier.sendLoginResultNotification(result, studentId);
                 }
-                
-                Notifier notifier = new Notifier(MainActivity.this, webhookUrls, notifyOnSuccessSwitch.isChecked());
-                notifier.sendLoginResultNotification(result, studentId);
                 
             } catch (Exception e) {
                 Logger.e("登录过程中发生异常", e);

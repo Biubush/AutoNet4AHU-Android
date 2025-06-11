@@ -71,8 +71,14 @@ public class Notifier {
      * @param studentId 学号
      */
     public void sendLoginResultNotification(LoginResult loginResult, String studentId) {
+        // 如果登录失败，不发送任何通知
+        if (!loginResult.isSuccess()) {
+            Logger.d("登录失败，不发送通知");
+            return;
+        }
+        
         // 如果登录成功但配置为不在成功时通知，则不发送通知
-        if (loginResult.isSuccess() && !notifyOnSuccess) {
+        if (!notifyOnSuccess) {
             Logger.d("登录成功，但配置为不在成功时通知，跳过通知");
             return;
         }
@@ -99,14 +105,10 @@ public class Notifier {
                 message += " IP: " + loginResult.getIpAddress();
             }
             
-            // 显示悬浮通知
-            if (loginResult.isSuccess()) {
-                floatingNotification.showSuccess(message);
-            } else {
-                floatingNotification.showError(message);
-            }
+            // 显示悬浮通知 (由于我们修改了sendLoginResultNotification方法，此处只会处理成功的情况)
+            floatingNotification.showSuccess(message);
             
-            Logger.d("悬浮窗通知已发送: " + (loginResult.isSuccess() ? "成功" : "失败") + " - " + message);
+            Logger.d("悬浮窗通知已发送: 成功 - " + message);
         } catch (Exception e) {
             Logger.e("发送悬浮窗通知失败", e);
         }
