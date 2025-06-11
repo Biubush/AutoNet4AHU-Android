@@ -1,6 +1,7 @@
 package com.biubush.autonet4ahu.service;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 
@@ -8,6 +9,7 @@ import androidx.annotation.Nullable;
 
 import com.biubush.autonet4ahu.core.EPortal;
 import com.biubush.autonet4ahu.core.NetworkDetector;
+import com.biubush.autonet4ahu.core.NetworkMonitor;
 import com.biubush.autonet4ahu.core.Notifier;
 import com.biubush.autonet4ahu.model.Config;
 import com.biubush.autonet4ahu.model.LoginResult;
@@ -25,9 +27,31 @@ public class LoginService extends Service {
     
     private ConfigManager configManager;
     private NetworkDetector networkDetector;
+    private NetworkMonitor networkMonitor;
     private Notifier notifier;
     private ExecutorService executorService;
     private boolean isRunning = false;
+    
+    /**
+     * 静态启动方法，便于从各处调用
+     *
+     * @param context 上下文
+     */
+    public static void startService(Context context) {
+        try {
+            Intent serviceIntent = new Intent(context, LoginService.class);
+            
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent);
+                Logger.d("通过startForegroundService启动登录服务");
+            } else {
+                context.startService(serviceIntent);
+                Logger.d("通过startService启动登录服务");
+            }
+        } catch (Exception e) {
+            Logger.e("启动登录服务失败", e);
+        }
+    }
     
     @Override
     public void onCreate() {
@@ -39,6 +63,9 @@ public class LoginService extends Service {
         
         // 初始化网络检测器
         networkDetector = new NetworkDetector(this);
+        
+        // 初始化网络监控器
+        networkMonitor = new NetworkMonitor(this);
         
         // 初始化线程池
         executorService = Executors.newSingleThreadExecutor();
@@ -58,6 +85,9 @@ public class LoginService extends Service {
         
         // 启动前台服务
         startForeground(FOREGROUND_SERVICE_ID, notifier.createForegroundNotification());
+        
+        // 启动网络监控
+        networkMonitor.startMonitoring();
         
         // 如果配置了自动登录，检查网络连接状态，连接成功则执行登录操作
         if (config.isAutoLogin() && config.isComplete()) {
@@ -80,6 +110,11 @@ public class LoginService extends Service {
     public void onDestroy() {
         Logger.i("LoginService销毁");
         isRunning = false;
+        
+        // 停止网络监控
+        if (networkMonitor != null) {
+            networkMonitor.stopMonitoring();
+        }
         
         // 关闭线程池
         if (executorService != null && !executorService.isShutdown()) {

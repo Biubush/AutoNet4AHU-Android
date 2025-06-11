@@ -28,6 +28,11 @@ public class PermissionUtil {
     public static final String PERMISSION_ACCESS_NETWORK_STATE = Manifest.permission.ACCESS_NETWORK_STATE;
     public static final String PERMISSION_ACCESS_WIFI_STATE = Manifest.permission.ACCESS_WIFI_STATE;
     public static final String PERMISSION_CHANGE_WIFI_STATE = Manifest.permission.CHANGE_WIFI_STATE;
+    public static final String PERMISSION_CHANGE_NETWORK_STATE = Manifest.permission.CHANGE_NETWORK_STATE;
+    
+    // 位置权限（在某些设备上获取WiFi信息需要）
+    public static final String PERMISSION_ACCESS_FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
+    public static final String PERMISSION_ACCESS_COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     
     // Android 13 通知权限
     public static final String PERMISSION_POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS";
@@ -56,6 +61,11 @@ public class PermissionUtil {
         permissions.add(PERMISSION_ACCESS_NETWORK_STATE);
         permissions.add(PERMISSION_ACCESS_WIFI_STATE);
         permissions.add(PERMISSION_CHANGE_WIFI_STATE);
+        permissions.add(PERMISSION_CHANGE_NETWORK_STATE);
+        
+        // 位置权限（获取WiFi信息）
+        permissions.add(PERMISSION_ACCESS_FINE_LOCATION);
+        permissions.add(PERMISSION_ACCESS_COARSE_LOCATION);
         
         // 前台服务权限（Android 9+）
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {

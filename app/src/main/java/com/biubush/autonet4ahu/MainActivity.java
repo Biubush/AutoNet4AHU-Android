@@ -259,15 +259,8 @@ public class MainActivity extends AppCompatActivity {
      */
     private void startLoginService() {
         try {
-            Intent serviceIntent = new Intent(this, LoginService.class);
-            
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent);
-                Logger.d("通过startForegroundService启动登录服务");
-            } else {
-                startService(serviceIntent);
-                Logger.d("通过startService启动登录服务");
-            }
+            // 使用新的静态方法启动服务
+            LoginService.startService(this);
         } catch (Exception e) {
             Logger.e("启动登录服务失败", e);
         }
