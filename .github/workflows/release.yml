@@ -138,28 +138,26 @@ jobs:
             echo "No commits found in range, using default message"
           fi
           
-          # 添加标题
-          CHANGELOG_WITH_TITLE="## 更新内容 ($PREVIOUS_TAG → $CURRENT_TAG)
-
-$CHANGELOG
-
-## 下载
-- ✅ [调试版本 (Debug APK)](https://github.com/${{ github.repository }}/releases/download/$CURRENT_TAG/AutoNet4AHU_v${{ steps.get_version.outputs.version }}_debug.apk)
-- ✅ [发布版本 (Release APK)](https://github.com/${{ github.repository }}/releases/download/$CURRENT_TAG/AutoNet4AHU_v${{ steps.get_version.outputs.version }}_release.apk)
-"
+          # 创建变更日志内容
+          echo "## 更新内容 ($PREVIOUS_TAG → $CURRENT_TAG)" > changelog.md
+          echo "" >> changelog.md
+          echo "$CHANGELOG" >> changelog.md
+          echo "" >> changelog.md
+          echo "## 下载" >> changelog.md
+          echo "- ✅ [调试版本 (Debug APK)](https://github.com/${{ github.repository }}/releases/download/$CURRENT_TAG/AutoNet4AHU_v${{ steps.get_version.outputs.version }}_debug.apk)" >> changelog.md
+          echo "- ✅ [发布版本 (Release APK)](https://github.com/${{ github.repository }}/releases/download/$CURRENT_TAG/AutoNet4AHU_v${{ steps.get_version.outputs.version }}_release.apk)" >> changelog.md
           
-          # 将变更日志保存到文件
-          echo "$CHANGELOG_WITH_TITLE" > changelog.md
+          # 读取变更日志文件内容
+          CHANGELOG_CONTENT=$(cat changelog.md)
           
           # 打印调试信息
           echo "==== Generated Changelog ===="
           cat changelog.md
           
-          # 设置多行变量以供后续步骤使用
-          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "changelog<<$EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG_WITH_TITLE" >> $GITHUB_OUTPUT
-          echo "$EOF" >> $GITHUB_OUTPUT
+          # 设置多行输出
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat changelog.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
       
       - name: Create Release
         id: create_release
