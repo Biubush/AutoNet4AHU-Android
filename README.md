@@ -211,4 +211,4 @@ com.biubush.autonet4ahu
 
 如有任何问题或建议，欢迎在GitHub上提交Issue或直接联系我。
 
-© 2023 [biubush](https://github.com/Biubush) 
+© 2025 [biubush](https://github.com/Biubush) 
