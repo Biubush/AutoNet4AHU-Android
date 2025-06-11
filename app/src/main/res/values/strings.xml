@@ -1,0 +1,51 @@
+<resources>
+    <string name="app_name">安大校园网助手</string>
+    <string name="title_activity_main">安徽大学校园网自动登录</string>
+    <string name="title_activity_log">日志查看</string>
+    
+    <!-- 主界面 -->
+    <string name="hint_student_id">请输入学号</string>
+    <string name="hint_password">请输入密码</string>
+    <string name="hint_webhook">请输入企业微信webhook地址（可选）</string>
+    <string name="label_auto_login">自动登录</string>
+    <string name="label_notify_on_success">登录成功时通知</string>
+    <string name="btn_save">保存配置</string>
+    <string name="btn_login">立即登录</string>
+    <string name="btn_view_logs">查看日志</string>
+    <string name="btn_about">关于</string>
+    
+    <!-- 日志界面 -->
+    <string name="btn_clear_logs">清空日志</string>
+    <string name="btn_save_logs">保存日志</string>
+    <string name="btn_back">返回</string>
+    
+    <!-- 通知 -->
+    <string name="notification_channel_name">校园网登录通知</string>
+    <string name="notification_channel_description">用于显示校园网登录状态的通知</string>
+    <string name="notification_title_success">校园网登录成功</string>
+    <string name="notification_title_failure">校园网登录失败</string>
+    <string name="notification_foreground_title">校园网自动登录</string>
+    <string name="notification_foreground_text">正在监听网络变化</string>
+    
+    <!-- 消息提示 -->
+    <string name="msg_config_saved">配置已保存</string>
+    <string name="msg_config_save_failed">配置保存失败</string>
+    <string name="msg_login_started">开始登录，请稍候…</string>
+    <string name="msg_login_success">登录成功</string>
+    <string name="msg_login_failed">登录失败: %1$s</string>
+    <string name="msg_network_unavailable">网络不可用</string>
+    <string name="msg_incomplete_config">请输入学号和密码</string>
+    <string name="msg_logs_cleared">日志已清空</string>
+    <string name="msg_logs_saved">日志已保存到: %1$s</string>
+    <string name="msg_logs_save_failed">日志保存失败</string>
+    
+    <!-- 权限相关 -->
+    <string name="permission_rationale">此应用需要以下权限才能正常工作：\n- 网络权限：用于连接校园网\n- 通知权限：用于显示登录状态\n- 开机自启动：用于在设备启动后自动登录</string>
+    <string name="permission_denied">部分权限被拒绝，应用可能无法正常工作</string>
+    <string name="btn_grant_permission">授予权限</string>
+    
+    <!-- 关于 -->
+    <string name="about_title">关于 安大校园网助手</string>
+    <string name="about_content">安徽大学校园网自动登录工具\n\n版本：1.0\n作者：Biubush\n\n此应用可以在网络连接时自动进行校园网认证，避免手动登录的麻烦。</string>
+    <string name="about_github">GitHub: https://github.com/biubush/AutoNet4AHU</string>
+</resources>
