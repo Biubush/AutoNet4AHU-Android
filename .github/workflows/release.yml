@@ -1,0 +1,186 @@
+name: Build and Release APK
+
+# 仅在推送以v开头的标签时触发
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build and Release APK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 获取完整历史记录，用于生成变更日志
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'  # 使用Eclipse Temurin JDK
+          java-version: '17'       # 使用Java 17
+          cache: gradle            # 缓存Gradle包
+      
+      - name: Set execution permission for gradlew
+        run: chmod +x ./gradlew
+        
+      - name: Print debug information
+        run: |
+          echo "==== Environment Information ===="
+          java -version
+          ./gradlew --version
+          echo "==== Current tag: ${{ github.ref_name }} ===="
+          echo "==== Repository: ${{ github.repository }} ===="
+      
+      - name: Get version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "Building version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        
+      - name: Update version code and name
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          echo "Updating version in build.gradle.kts to $VERSION"
+          
+          # 替换versionName
+          sed -i "s/versionName = \".*\"/versionName = \"$VERSION\"/" app/build.gradle.kts
+          
+          # 打印修改后的文件以进行调试
+          echo "==== Modified build.gradle.kts ===="
+          cat app/build.gradle.kts
+      
+      - name: Build debug APK
+        run: |
+          echo "Starting APK build..."
+          ./gradlew assembleDebug --stacktrace
+          echo "APK build completed."
+      
+      - name: Build release APK
+        run: |
+          echo "Starting Release APK build..."
+          ./gradlew assembleRelease --stacktrace
+          echo "Release APK build completed."
+      
+      - name: List generated APKs
+        run: |
+          echo "==== Generated APK Files ===="
+          find app/build/outputs/apk -type f -name "*.apk" | sort
+      
+      - name: Rename APK files
+        id: rename_apk
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          
+          # 创建目录用于存放最终APK
+          mkdir -p release_apks
+          
+          # 定位并重命名Debug APK
+          DEBUG_APK=$(find app/build/outputs/apk/debug -type f -name "*.apk" | head -n 1)
+          if [ -n "$DEBUG_APK" ]; then
+            DEBUG_APK_NAME="AutoNet4AHU_v${VERSION}_debug.apk"
+            cp "$DEBUG_APK" "release_apks/$DEBUG_APK_NAME"
+            echo "debug_apk=release_apks/$DEBUG_APK_NAME" >> $GITHUB_OUTPUT
+            echo "Debug APK renamed to: $DEBUG_APK_NAME"
+          else
+            echo "Warning: Debug APK not found!"
+          fi
+          
+          # 定位并重命名Release APK
+          RELEASE_APK=$(find app/build/outputs/apk/release -type f -name "*.apk" | head -n 1)
+          if [ -n "$RELEASE_APK" ]; then
+            RELEASE_APK_NAME="AutoNet4AHU_v${VERSION}_release.apk"
+            cp "$RELEASE_APK" "release_apks/$RELEASE_APK_NAME"
+            echo "release_apk=release_apks/$RELEASE_APK_NAME" >> $GITHUB_OUTPUT
+            echo "Release APK renamed to: $RELEASE_APK_NAME"
+          else
+            echo "Warning: Release APK not found!"
+          fi
+          
+          # 列出重命名后的APK
+          echo "==== Renamed APK Files ===="
+          ls -la release_apks/
+      
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "==== Generating Changelog ===="
+          
+          # 获取当前标签和前一个标签
+          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+          echo "Current tag: $CURRENT_TAG"
+          
+          # 尝试获取前一个标签
+          PREVIOUS_TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | grep -v "$CURRENT_TAG" | head -n 1)
+          
+          # 如果找不到前一个标签，则使用首次提交
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "No previous tag found, using first commit"
+            PREVIOUS_TAG=$(git rev-list --max-parents=0 HEAD)
+            RANGE="$PREVIOUS_TAG..$CURRENT_TAG"
+          else
+            echo "Previous tag: $PREVIOUS_TAG"
+            RANGE="$PREVIOUS_TAG..$CURRENT_TAG"
+          fi
+          
+          echo "Commit range: $RANGE"
+          
+          # 生成变更日志
+          CHANGELOG=$(git log --pretty=format:"* %s (%h)" $RANGE)
+          
+          # 如果没有提交，添加默认消息
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="* 此版本没有详细的更新日志"
+            echo "No commits found in range, using default message"
+          fi
+          
+          # 添加标题
+          CHANGELOG_WITH_TITLE="## 更新内容 ($PREVIOUS_TAG → $CURRENT_TAG)
+
+$CHANGELOG
+
+## 下载
+- ✅ [调试版本 (Debug APK)](https://github.com/${{ github.repository }}/releases/download/$CURRENT_TAG/AutoNet4AHU_v${{ steps.get_version.outputs.version }}_debug.apk)
+- ✅ [发布版本 (Release APK)](https://github.com/${{ github.repository }}/releases/download/$CURRENT_TAG/AutoNet4AHU_v${{ steps.get_version.outputs.version }}_release.apk)
+"
+          
+          # 将变更日志保存到文件
+          echo "$CHANGELOG_WITH_TITLE" > changelog.md
+          
+          # 打印调试信息
+          echo "==== Generated Changelog ===="
+          cat changelog.md
+          
+          # 设置多行变量以供后续步骤使用
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "changelog<<$EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG_WITH_TITLE" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+      
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          name: AutoNet4AHU ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
+          files: |
+            ${{ steps.rename_apk.outputs.debug_apk }}
+            ${{ steps.rename_apk.outputs.release_apk }}
+      
+      - name: Summary
+        run: |
+          echo "==== Build and Release Summary ===="
+          echo "Version: ${{ steps.get_version.outputs.version }}"
+          echo "Debug APK: ${{ steps.rename_apk.outputs.debug_apk }}"
+          echo "Release APK: ${{ steps.rename_apk.outputs.release_apk }}"
+          echo "Release URL: ${{ steps.create_release.outputs.url }}"
+          echo "Workflow completed successfully!" 
