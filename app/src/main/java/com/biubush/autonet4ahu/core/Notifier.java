@@ -42,6 +42,7 @@ public class Notifier {
     private final Context context;
     private final List<String> webhookUrls;
     private final boolean notifyOnSuccess;
+    private final FloatingNotification floatingNotification;
     
     /**
      * 构造函数
@@ -54,8 +55,9 @@ public class Notifier {
         this.context = context.getApplicationContext();
         this.webhookUrls = webhookUrls;
         this.notifyOnSuccess = notifyOnSuccess;
+        this.floatingNotification = new FloatingNotification(context);
         
-        // 创建通知渠道
+        // 创建通知渠道（仍然需要用于前台服务）
         createNotificationChannel();
         
         Logger.d("Notifier初始化完成，webhook数量: " + (webhookUrls != null ? webhookUrls.size() : 0) + 
@@ -75,8 +77,8 @@ public class Notifier {
             return;
         }
         
-        // 发送系统通知
-        showSystemNotification(loginResult);
+        // 发送悬浮窗通知
+        showFloatingNotification(loginResult);
         
         // 发送企业微信通知
         if (webhookUrls != null && !webhookUrls.isEmpty()) {
@@ -85,45 +87,28 @@ public class Notifier {
     }
     
     /**
-     * 显示系统通知
+     * 显示悬浮窗通知
      *
      * @param loginResult 登录结果
      */
-    private void showSystemNotification(LoginResult loginResult) {
+    private void showFloatingNotification(LoginResult loginResult) {
         try {
-            NotificationManager notificationManager = 
-                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            
-            if (notificationManager == null) {
-                Logger.e("无法获取NotificationManager");
-                return;
+            // 构建通知内容
+            String message = loginResult.getMessage();
+            if (loginResult.getIpAddress() != null && !loginResult.getIpAddress().isEmpty()) {
+                message += " IP: " + loginResult.getIpAddress();
             }
             
-            // 创建点击通知时的Intent
-            Intent intent = new Intent(context, MainActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            // 显示悬浮通知
+            if (loginResult.isSuccess()) {
+                floatingNotification.showSuccess(message);
+            } else {
+                floatingNotification.showError(message);
+            }
             
-            // 构建通知
-            String title = loginResult.isSuccess() ? "校园网登录成功" : "校园网登录失败";
-            String content = loginResult.getMessage() + (loginResult.getIpAddress() != null ? 
-                    " IP: " + loginResult.getIpAddress() : "");
-            
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                    .setSmallIcon(android.R.drawable.ic_dialog_info)
-                    .setContentTitle(title)
-                    .setContentText(content)
-                    .setContentIntent(pendingIntent)
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                    .setAutoCancel(true);
-            
-            // 显示通知
-            notificationManager.notify(NOTIFICATION_ID, builder.build());
-            Logger.d("系统通知已发送: " + title + " - " + content);
-            
+            Logger.d("悬浮窗通知已发送: " + (loginResult.isSuccess() ? "成功" : "失败") + " - " + message);
         } catch (Exception e) {
-            Logger.e("发送系统通知失败", e);
+            Logger.e("发送悬浮窗通知失败", e);
         }
     }
     

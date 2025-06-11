@@ -3,7 +3,10 @@ package com.biubush.autonet4ahu;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
@@ -289,6 +292,21 @@ public class MainActivity extends AppCompatActivity {
      * 检查权限
      */
     private void checkPermissions() {
+        // 检查是否有悬浮窗权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.app_name)
+                    .setMessage("需要授予悬浮窗权限以显示通知")
+                    .setPositiveButton("去授权", (dialog, which) -> {
+                        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+                        intent.setData(Uri.parse("package:" + getPackageName()));
+                        startActivity(intent);
+                    })
+                    .setNegativeButton("取消", null)
+                    .show();
+        }
+        
+        // 检查其他权限
         if (!PermissionUtil.checkAndRequestPermissions(this, PERMISSION_REQUEST_CODE)) {
             Logger.i("正在请求权限");
         }
